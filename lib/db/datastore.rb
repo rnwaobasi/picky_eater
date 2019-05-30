@@ -30,6 +30,17 @@ module::DB
                 @db.copy_into(:restaurant_locations, data: restaurant_locations_csv, format: :csv, options: 'HEADER true')
             end
         end
+
+        def get_restaurants(params)
+            # Unfortunately, Sequel doesn't play nice if keys of params hash are not symbols
+            params_with_symbols = params.inject({}){|memo,(k,v)| memo[k.to_sym] = v; memo}
+
+            @db[:restaurants]
+                .select(:camis, :dba, :phone, :cuisine, :grade, :grade_date, :building, :street, :boro, :zipcode)
+                .join_table(:inner, :restaurant_locations, restaurant_camis: :camis)
+                .join_table(:inner, :locations, id: :location_id)
+                .where(params_with_symbols).all
+        end
     end
 
     DS = Datastore.new
